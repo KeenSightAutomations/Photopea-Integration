@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photopea Batch Processor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Photopea Smart Object Integration</h1>
+        </header>
+
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Start using Photopea.</li>
+                <li>Use "Open from Computer" in Photopea to load your mockup PSD template.</li>
+                <li>Make Sure After open your psd file select layer of smart object to be active</li>
+                <li>Use the controls below to load and process your images.</li>
+            </ol>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <button id="selectInputFolderButton" onclick="selectInputFolder()">Select Input Folder</button>
+            </div>
+            <div class="control-group">
+                <button id="selectOutputFolderButton" onclick="selectOutputFolder()">Select Output Folder</button>
+            </div>
+            <div class="control-group">
+                <button id="processImagesButton" onclick="processAllImages()">Start Processing</button>
+            </div>
+        </div>
+
+        <div id="notification" class="notification"></div>
+        <div id="status"></div>
+
+        <iframe id="photopeaFrame" class="photopea-frame" src="https://www.photopea.com"></iframe>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
