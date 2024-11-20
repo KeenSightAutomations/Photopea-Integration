@@ -15,7 +15,7 @@ This project integrates Photopea's functionality into a browser-based tool for p
 
 * **Method 1**
     ```
-    cd photopea-integration
+    cd Photopea-Integration
 
     Start a local web server (e.g., using Python):
     python -m http.server 8000
@@ -26,7 +26,7 @@ This project integrates Photopea's functionality into a browser-based tool for p
 
 * **Method 2**
     ```
-    cd photopea-integration
+    cd Photopea-Integration
 
     press right click on index.html and choose open with google chrome
     ```
