@@ -34,19 +34,7 @@ This project integrates Photopea's functionality into a browser-based tool for p
 
 # Usage
 ## Step 1: Load a Smart Object Template
-* start using Photopea editor.
-* Use the "Open from Computer" option to load a PSD mockup with a smart object layer.
-
-* make sure the smart object layer( have a little sign in the bottom-right corner of the thumbnail.) is the active layer like this image after open psd file you can find layers on right place if not found it press on this icon to find it 
-
-  ![alt text](images/image-1.png)
-
-    ![alt text](images/image.png)
-
-* This example to show which layer is smart object
-    ![alt text](images/image-2.png)
-
-
+* Click "choose file" to load PSD file
 
 ## Step 2: Select Folders
 * Click "Select Input Folder" to choose the folder containing the images you want to process.
@@ -78,6 +66,3 @@ The app requires browser permission to access local folders:
 * Issue: Can't Select Folder(Input or Output)
     * Solution: Ensure that you are use google chrome or edge browser
 
-* Issue: No smart object layer detected.
-
-    * Solution: Ensure the smart object layer is active in the PSD file before running the script.

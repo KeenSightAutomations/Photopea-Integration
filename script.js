@@ -6,6 +6,8 @@ let outputImage = document.getElementById('outputImage');
 let outputFolderHandle = null; // To store the selected folder handle
 let inputFolderHandle = null; // To store the selected input folder handle
 let currentFile = null;
+let activeLayer =  null;
+let NumActiveLayer = null;
 
 function showNotification(message, type = 'info') {
     // Set message and class based on type
@@ -35,7 +37,7 @@ async function selectOutputFolder() {
         if (!hasPermission) {
             alert("Permission denied. Please grant permission to the folder.");
         }
-        showNotification('Output folder selected successfully.');
+        showNotification('Output folder selected successfully.', 'success');
     } catch (error) {
         showNotification('Folder selection failed. Make sure you use chrome or edge browser', 'error');
         console.error(error);
@@ -45,7 +47,7 @@ async function selectOutputFolder() {
 async function selectInputFolder() {
     try {
         inputFolderHandle = await window.showDirectoryPicker();
-        showNotification('Input folder selected successfully.');
+        showNotification('Input folder selected successfully.', 'success');
     } catch (error) {
         showNotification('Folder selection failed. Make sure you use chrome or edge browser', 'error');
         console.error(error);
@@ -70,7 +72,7 @@ async function saveToFolder(data, fileName) {
     }
 
     try {
-        const exportName = `export_${fileName}_${Date.now()}.png`;
+        const exportName = `export_${fileName}_${Date.now()}.jpg`;
         const fileHandle = await outputFolderHandle.getFileHandle(exportName, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(data);
@@ -83,7 +85,7 @@ async function saveToFolder(data, fileName) {
 }   
 
 function handleExportedImage(data, fileName) {
-    const blob = new Blob([data], { type: 'image/png' });
+    const blob = new Blob([data], { type: 'image/jpg' });
     saveToFolder(blob, fileName);
 }
 
@@ -98,17 +100,60 @@ async function readFileAsBase64(fileHandle) {
     });
 }
 
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+async function openPSD(file) {
+    try {
+        console.log('Processing psd:', file.name);
+        const base64Data = await fileToBase64(file);
+        
+        // Script to handle image processing in smart object
+        const commands = [
+            // Open the image file
+            'app.open("' + base64Data + '", null, true)',
+            
+        ];
+        const script = commands.join(';');
+        photopeaFrame.contentWindow.postMessage(script, "*");
+    } catch (error) {
+        console.error('Error processing image:', error);
+        showNotification('Error processing PSD: ' + error.message, 'error');
+    }
+}
+
+function selectActiveLayer() {
+    const commands = [
+        `
+        var lays = app.activeDocument.layers;
+        for(var i=0; i< lays.length; i++)
+        {
+            var smartObjectLayer = lays[i]
+            if (smartObjectLayer.kind === LayerKind.SMARTOBJECT){
+                app.echoToOE("smartObjectLayer: " + smartObjectLayer.name + ' Num ' + i)
+                break;
+            }
+        }
+        `,
+        
+    ];
+    photopeaFrame.contentWindow.postMessage(commands.join(';'), '*');
+}
+
 function insertImageIntoSmartObject() {
     showNotification('Please wait, processing your image...');
     const commands = [
-        // Save the current active document to Output Environment as a PNG
-            'var activeDocument = app.activeDocument;',
-            'var smartObjectLayer = activeDocument.activeLayer;',
-            
+            `app.activeDocument.activeLayer = app.activeDocument.layers[${NumActiveLayer}];`,
+            'var smartObjectLayer = app.activeDocument.activeLayer;',            
             `if (!smartObjectLayer || smartObjectLayer.kind != LayerKind.SMARTOBJECT) {
                 alert("Please select a valid Smart Object layer.");
-            }
-            app.echoToOE("Not Valid Smart Object");`
+            }`
             ,
             'var idEditContents = stringIDToTypeID("placedLayerEditContents");',
             'var desc = new ActionDescriptor();',
@@ -117,11 +162,11 @@ function insertImageIntoSmartObject() {
     photopeaFrame.contentWindow.postMessage(commands.join(';'), '*');
 }
 
+
 async function openImage(fileHandle) {
     const base64Data = await readFileAsBase64(fileHandle);
 
     const commands = [
-        // Save the current active document to Output Environment as a PNG
             'var newDoc = app.activeDocument;',
             'app.open("' + base64Data + '", null, true);',
     ];
@@ -132,6 +177,7 @@ function reziseImage() {
     const commands = [
         // Automatically save the active document
         'alert("rezise Image");',
+        'var soDoc = app.activeDocument;',
         'var placedLayer = soDoc.activeLayer;', // Save the document
         'var widthScale = (soDoc.width / placedLayer.bounds[2]) * 100;',
         'var hightScale = (soDoc.height / placedLayer.bounds[3]) * 100;',
@@ -247,13 +293,24 @@ function saveDocument() {
     photopeaFrame.contentWindow.postMessage(commands.join(';'), '*');
 }
 
+function closeDocument() {
+    const commands = [
+        // Automatically save the active document
+        'var activeDocument = app.activeDocument;',
+        'activeDocument.close();',
+        'app.echoToOE("Processing Complete");' // Notify success
+    ];
+    photopeaFrame.contentWindow.postMessage(commands.join(';'), '*');
+}
+
+
 function exportImage(fileName) {
     const commands = [
-        // Save the current active document to Output Environment as a PNG
+        // Save the current active document to Output Environment as a jpg
         
         `var activeDocument = app.activeDocument;
         if (activeDocument) {
-            activeDocument.saveToOE("png"); // Save the active document as PNG
+            activeDocument.saveToOE("jpg"); // Save the active document as jpg
             app.echoToOE('${fileName}'); // Send a success message
         } else {
             app.echoToOE("Error: No active document to export."); // Notify error if no document
@@ -284,6 +341,12 @@ async function processImage(fileName) {
 
 
 async function processAllImages() {
+    const file = document.getElementById('psdFile').files[0];
+        if (!file) {
+            showNotification('Please select a PSD file', 'error');
+            return;
+        }
+
     if (!inputFolderHandle) {
         showNotification('Input folder not selected. Please select an input folder first.', 'error');
         return;
@@ -293,6 +356,7 @@ async function processAllImages() {
         return;
     }
 
+
     const files = await getFilesFromFolder(inputFolderHandle);
 
     if (files.length === 0) {
@@ -300,11 +364,18 @@ async function processAllImages() {
         return;
     }
 
+    await openPSD(file);
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    selectActiveLayer()
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     showNotification('Processing images...');
     for (const fileHandle of files) {
         await processImage(fileHandle);
         await new Promise(resolve => setTimeout(resolve, 5000));
     }
+
+    closeDocument()
 
     showNotification('All images processed and saved successfully.', 'success');
 }
@@ -313,6 +384,14 @@ async function processAllImages() {
 window.addEventListener('message', function(e) {
     if (e.origin === 'https://www.photopea.com') {
         if (typeof e.data === 'string') {
+            if (typeof e.data === 'string') {
+                if (e.data.startsWith('smartObjectLayer:')){
+                    const layerData = e.data.split(' Num ');
+                    activeLayer = layerData[0].replace('smartObjectLayer: ', '').trim();
+                    NumActiveLayer = parseInt(layerData[1].trim());
+                    console.log('Extracted layer name:', activeLayer);
+                }
+            }
             if (e.data.startsWith('Error')){
                 showNotification(e.data, 'error')
             }
