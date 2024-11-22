@@ -11,7 +11,6 @@ def send_script_to_photopea(imagePath, psd_file_path, server_url, script):
     # Prepare the JSON configuration
     config = {
         "files": [f"{server_url}/{imagePath}",f"{server_url}/{psd_file_path}"],
-        "server": f"{server_url}/save_image.php", 
         "script": script
     }
 
