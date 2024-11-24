@@ -11,6 +11,11 @@ def send_script_to_photopea(imagePath, psd_file_path, server_url, script):
     # Prepare the JSON configuration
     config = {
         "files": [f"{server_url}/{imagePath}",f"{server_url}/{psd_file_path}"],
+        "server": {
+            "version": 1,
+            "url": server_url,
+            "formats": ["jpg:1"]
+        },
         "script": script
     }
 
@@ -88,14 +93,16 @@ def process_images_in_folder(imagePath, psd_file_path, server_url):
             app.activeDocument.save();
             app.activeDocument.close();
             app.activeDocument = app.documents[1];
+
+            app.activeDocument.save();
             '''
             
 
-            'var exportOptions = new ExportOptionsSaveForWeb();',
-            'exportOptions.format = SaveDocumentType.JPEG;',
-            'exportOptions.quality = 100;',
-            f'var outputName = "export_{timestamp}.jpg";',
-            'app.activeDocument.exportDocument(new File(outputName), ExportType.SAVEFORWEB, exportOptions);',
+            # 'var exportOptions = new ExportOptionsSaveForWeb();',
+            # 'exportOptions.format = SaveDocumentType.JPEG;',
+            # 'exportOptions.quality = 100;',
+            # f'var outputName = "export_{timestamp}.jpg";',
+            # 'app.activeDocument.exportDocument(new File(outputName), ExportType.SAVEFORWEB, exportOptions);',
         '}'
     ]
 
@@ -120,7 +127,6 @@ if __name__ == "__main__":
     for file in files:
         file_path = input_dir + '/' + file
         print(file_path)
-    # Process the PSD and images
         process_images_in_folder(file_path, psd_file_path, server_url)
 
 
